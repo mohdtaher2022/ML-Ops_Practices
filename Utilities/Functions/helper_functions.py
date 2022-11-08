@@ -108,3 +108,48 @@ def create_features_and_transform(df, input_features):
         outputCol="features")
     df_transform = assembler.transform(df)
     return df_transform
+
+
+# Function to apply model experiments.
+# addtional params retain_best_model = True, select_model_metric = 'avg_pr'
+def Binary_model_Experiment( model_list, train_df, test_df, y_label, input_feature, configs_, label_dictionary, 
+                            save_model = True, model_location = None ):
+  schema = st.StructType([ \
+                          st.StructField("Model_version", st.IntegerType(),True), \
+                          st.StructField("Label_category",st.StringType(),True), \
+                          st.StructField("Metric_name",   st.StringType(),True), \
+                          st.StructField("Metric_value",  st.DoubleType(), True), \
+                          st.StructField("classifier",    st.StringType(), True), \
+                          st.StructField("capture_date",  st.DateType(), True) \
+                          ])
+  model_name_ = [] 
+  master_log_df = spark.createDataFrame(data =[], schema=schema)
+  for model_ in model_list:
+    iter_model = model_(labelCol= y_label, featuresCol= input_feature)
+    Mtype = type(iter_model).__name__
+    model_name_.append(Mtype)
+    print("Iter Model :",Mtype)
+    _evaluator = BinaryClassificationEvaluator(labelCol= y_label, rawPredictionCol= "rawPrediction",
+                                               metricName = configs_.eval_metric)
+    # create hyper parameter grid to evaluate cross validation Model Config is added in the retrian config part.
+    _paramGrid = SelectParameters(ModelType = Mtype, model_ =  iter_model)
+    # Create K-fold CrossValidator
+    _cv = CrossValidator(estimator= iter_model, estimatorParamMaps= _paramGrid, 
+                                evaluator=_evaluator, numFolds= configs_.cv_folds)
+    _cvModel = _cv.fit(train_df)
+    _bestModel = _cvModel.bestModel
+    testPrediction = _bestModel.transform(test_df)
+    testPrediction = testPrediction.withColumn("prob_raw", extract_prob_udf(F.col("probability")))
+    if save_model:
+      _bestModel.write().overwrite().save(os.path.join(model_location,Mtype))
+    # Model Scores
+    # label_dictionary = {0.0: "Non ALK+ NSCLC", 1.0: "ALK+ NSCLC"}
+    Iter_model_scores = Model_scores(df = testPrediction,  prediction_col = "prediction" ,
+                                     lable_col = y_label,prob_col = "prob_raw",
+                                     label_dict = label_dictionary,model_name = Mtype,
+                                     model_verion = 1 ) # Can be made Dynamically changable once 
+    master_log_df = master_log_df.union(Iter_model_scores)
+  
+  master_log_df_pivot = master_log_df.groupBy("Model_version", "Label_category", "Metric_name", 
+                                              "classifier", "capture_date" ).pivot("classifier", model_name_).sum("Metric_value")
+  return {'train_results': master_log_df_pivot}
