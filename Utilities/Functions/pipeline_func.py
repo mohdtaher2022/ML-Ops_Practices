@@ -1,4 +1,5 @@
 from pyspark.ml.pipeline import Transformer
+from pyspark.sql.functions import udf
 
 # Functions
 # count the categories of Cat columns.
