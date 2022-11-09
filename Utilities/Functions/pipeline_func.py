@@ -1,3 +1,4 @@
+from pyspark.ml.pipeline import Transformer
 
 # Functions
 # count the categories of Cat columns.
