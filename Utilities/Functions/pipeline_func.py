@@ -89,7 +89,7 @@ def col_translate(mapping):
 
 # Function for Ordinal 
 def ordinal_label_mapping(df, mapping_, drop_orignal =True, replace_na = True, replace_na_val = 0):
-    """  
+  """  
   df = Input Data frame, 
   mapping_ = Mapping dictionary which has column categories mapped to Numerical value e.g. bad: 0, good: 1, excellent: 2 
   replace_na = any NA values found (categories which doesn't have mappping key)
