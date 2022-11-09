@@ -1,6 +1,7 @@
 from pyspark.sql import SparkSession, types as T, functions as F
 import pyspark.sql.types  as st
 import numpy as np
+import re
 # Model Score record Table
 def Model_scores( df , prediction_col , lable_col, label_dict, prob_col, model_verion, model_name):
     """  Function to extract out model performance on outputs
