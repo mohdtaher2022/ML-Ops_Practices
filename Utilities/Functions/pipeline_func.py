@@ -4,6 +4,7 @@ from pyspark.sql.functions import udf
 import pyspark.sql.types  as st
 from pyspark.sql import SparkSession, types as T, functions as F
 import numpy as np
+import re
 
 # Functions
 # count the categories of Cat columns.
