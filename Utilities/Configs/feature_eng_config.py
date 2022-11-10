@@ -47,3 +47,8 @@ step_4_regex = extract_regex_expr_pipeline(cols_ = ['AgeCategory'] , expr = exp_
 
 # Step 5  Dropping unessary Columns. 
 step_5_drop_columns = drop_columns_pipeline( cols = ['capture_date'])
+
+
+# Addtional transformation.        
+create_feature_pipeline = create_features_and_transform_pipeline(exc_cols = exc_cols_)
+
