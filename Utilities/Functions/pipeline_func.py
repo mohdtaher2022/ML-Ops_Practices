@@ -221,6 +221,18 @@ class drop_columns_pipeline(Transformer):
         return df.drop(*self.cols) 
         
 
+# Function to plug function within pipeline
+class create_features_and_transform_pipeline(Transformer):
+    """Function To create feature for model input"""
+    def __init__(self, exc_cols):
+       self.exc_cols = exc_cols
+    def this():
+        #define an unique ID
+        this(Identifiable.randomUID("create_and_Transform"))
+    def _transform(self, df):
+        return create_features_and_transform(df = df,
+                                             input_features =  input_features(df, exclude_cols = self.exc_cols))
+
  # To know dimensions of Spark Dataframe (Rowns and Coloumns) similar to pandas shape function.
 def spark_shape(self):
     return (self.count(), len(self.columns))
