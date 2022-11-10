@@ -155,5 +155,5 @@ def Binary_model_Experiment( model_list, train_df, test_df, y_label, input_featu
     master_log_df = master_log_df.union(Iter_model_scores)
   
   master_log_df_pivot = master_log_df.groupBy("Model_version", "Label_category", "Metric_name", 
-                                              "classifier", "capture_date" ).pivot("classifier", model_name_).sum("Metric_value")
+                                               "capture_date" ).pivot("classifier", model_name_).sum("Metric_value")
   return {'train_results': master_log_df_pivot}
