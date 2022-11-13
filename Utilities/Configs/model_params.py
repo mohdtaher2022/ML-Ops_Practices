@@ -39,7 +39,7 @@ class train_config:
   cv_folds = 2
   eval_metric = 'areaUnderPR'
   
- 
+# Model Selections. 
 model_names_= {'GBTClassifier': GBTClassificationModel,
               'LogisticRegression': LogisticRegressionModel,
               'RandomForestClassifier': RandomForestClassificationModel}
