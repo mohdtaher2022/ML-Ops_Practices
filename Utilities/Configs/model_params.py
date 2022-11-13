@@ -38,3 +38,8 @@ def SelectParameters(ModelType, model_):
 class train_config:
   cv_folds = 2
   eval_metric = 'areaUnderPR'
+  
+ 
+model_names_= {'GBTClassifier': GBTClassificationModel,
+              'LogisticRegression': LogisticRegressionModel,
+              'RandomForestClassifier': RandomForestClassificationModel}
