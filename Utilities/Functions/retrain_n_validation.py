@@ -43,7 +43,7 @@ def recall_precision_selection(model_, model_location, df, return_graph = True,
   threshold = 0.4 of selected metric precision or recall, 
   print_cut_off = True print model cutoff
   """
-  iter_model = model_names_[model_].load(os.path.join(model_location,model_))
+  iter_model = load_model_dict[model_].load(os.path.join(model_location,model_))
   test_df_ = iter_model.transform(df)
   test_df_ = test_df_.withColumn("prob_raw", extract_prob_udf(F.col("probability")))
   prob = test_df_.select('prob_raw').rdd.flatMap(lambda x: x).collect()
