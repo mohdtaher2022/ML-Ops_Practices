@@ -157,3 +157,11 @@ def Binary_model_Experiment( model_list, train_df, test_df, y_label, input_featu
   master_log_df_pivot = master_log_df.groupBy("Model_version", "Label_category", "Metric_name", 
                                                "capture_date" ).pivot("classifier", model_name_).sum("Metric_value")
   return {'train_results': master_log_df_pivot}
+
+# Loading Json Files
+def load_json(file_location):
+  # Opening JSON file
+  f = open(file_location)
+  # returns JSON object as a dictionary
+  return json.load(f)
+
