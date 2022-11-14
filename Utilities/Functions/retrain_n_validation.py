@@ -75,3 +75,10 @@ def recall_precision_selection(model_, model_location, df, return_graph = True,
                 'precision': np.str(precison_),'recall': np.str(recall_), 
                 'cut-off': np.str(new_selected_threshold_value)}
   return output_obj
+
+
+# Loading Saved Model
+def loadModel(input_model, location = os.path.join(os.getcwd(),'output/content/saved_models')):
+  model_location = os.path.join(location, input_model) 
+  model_ = load_model_dict[input_model].load(model_location)
+  return model_
