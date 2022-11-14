@@ -17,7 +17,18 @@ two_categories = ['HeartDisease', 'Smoking', 'AlcoholDrinking', 'Stroke', 'DiffW
                   'Sex', 'PhysicalActivity', 'Asthma', 'KidneyDisease', 'SkinCancer']
 
 # Mapping only Yes Category in Encoding for Heart Disease
-Heart_disease =  {'HeartDisease': ['No']}
+Heart_disease =  {'HeartDisease': ['No'], 
+                 'Smoking': ['No'],            
+                 'AlcoholDrinking': ['No'],
+                 'Stroke':['No'],
+                'PhysicalHealth': ['No'],
+                 'MentalHealth': ['No'],
+                 'DiffWalking' : ['No'], 
+                 'Sex': ['Male'],
+                 'PhysicalActivity': ['No'],
+                 'Asthma' :  ['No'],
+                 'KidneyDisease' :['No'],
+                 'SkinCancer': ['No']}
 
 #  Setup Ordinal Piece
 # Numerical Mapping to Categorical columns
