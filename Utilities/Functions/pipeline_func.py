@@ -237,3 +237,64 @@ class create_features_and_transform_pipeline(Transformer):
 def spark_shape(self):
     return (self.count(), len(self.columns))
 pyspark.sql.dataframe.DataFrame.shape = spark_shape
+
+
+#  Pipeline to apply inference on the transformed Dataset.
+def model_inference(model_, df,  apply_cutoff=False, model_threshold = 0.5):
+  """ 
+  model_ = Trained Model, 
+  df = Input Data frame, 
+  y_label = dependant Variables
+  apply_cutoff=False,  cut_off apply custom cutoff on the model 
+  model_threshold = 0.5 default model threshold at 0.5
+  """
+  validation_predicted_prod = model_.transform(df)
+  validation_predicted_prod = validation_predicted_prod.withColumn("prob_raw", extract_prob_udf(F.col("probability")))
+
+  if apply_cutoff: # Condtion if prediction to be applied on 
+    validation_predicted_prod = validation_predicted_prod.withColumn( "prediction_with_threshold" ,
+                                                                     F.when(F.col("prob_raw") >= model_threshold , 1.0)\
+                                                                     .otherwise(0.0))
+  else:
+    validation_predicted_prod = validation_predicted_prod.withColumn("prediction_with_threshold" , F.col('prediction'))
+  return validation_predicted_prod
+
+# Adding Function into Pipeline.
+class model_inference_pipeline(Transformer):
+    """Function To calculate apply ordinal mapping pipeline Functions"""
+    def __init__(self,model_,  apply_cutoff=False, model_threshold = 0.5):
+        self.model_ = model_ #the name of your columns
+        self.apply_cutoff = apply_cutoff
+        self.model_threshold = model_threshold
+    def this():
+        #define an unique ID
+        this(Identifiable.randomUID("Model_Inference_generate_scores"))
+    # transform
+    def _transform(self, df):
+        return model_inference(df = df,
+                               model_       = self.model_,
+                               apply_cutoff     = self.apply_cutoff,
+                               model_threshold =   self.model_threshold)
+
+
+#  Performance Evaluation code itegrated within Pipeline
+class model_scores_pipeline(Transformer):
+  """Model scores function to be integrated within pipeline"""
+  def __init__(self,prediction_col, lable_col, label_dict, prob_col, model_verion, model_name):
+        self.prediction_col = prediction_col # Y Label
+        self.lable_col = lable_col 
+        self.label_dict = label_dict
+        self.prob_col = prob_col
+        self.model_verion = model_verion
+        self.model_name = model_name
+  def this():
+    #define an unique ID
+    this(Identifiable.randomUID("Model_scores"))
+  def _transform(self, df):
+        return Model_scores(df = df , 
+                            prediction_col = self.prediction_col , 
+                            lable_col = self.lable_col, 
+                            label_dict = self.label_dict, 
+                            prob_col = self.prob_col, 
+                            model_verion = self.model_verion, 
+                            model_name = self.model_name)
