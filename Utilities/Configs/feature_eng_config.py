@@ -17,7 +17,7 @@ two_categories = ['HeartDisease', 'Smoking', 'AlcoholDrinking', 'Stroke', 'DiffW
                   'Sex', 'PhysicalActivity', 'Asthma', 'KidneyDisease', 'SkinCancer']
 
 # Mapping only Yes Category in Encoding for Heart Disease
-Heart_disease =  {'HeartDisease': ['No'], 
+binary_exec =  {'HeartDisease': ['No'], 
                  'Smoking': ['No'],            
                  'AlcoholDrinking': ['No'],
                  'Stroke':['No'],
@@ -42,7 +42,7 @@ excludng_categories = {'Diabetic' :  ['No, borderline diabetes', 'No', 'Yes'],
                        'Race': ['Other']}
 
 # Step 1 : One Hot encoding for two level categories Yes or No's
-step_1_one_hot_enc=  one_hot_encoder_pipeline(col_list = two_categories, exclude_cat = Heart_disease, drop_cols = two_categories,
+step_1_one_hot_enc=  one_hot_encoder_pipeline(col_list = two_categories, exclude_cat = binary_exec, drop_cols = two_categories,
                                               drop_orignal =True,drop_last_col= True)
 # Step 2 : One Hot Encoding for Female who are diabetice during Pregnancy, as it is non comparable to Normal Diabetic condtions.  
 # Excluding Others from Race as it's not interpretable from Business Perspective.
