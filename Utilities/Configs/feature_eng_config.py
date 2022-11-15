@@ -47,7 +47,7 @@ step_1_one_hot_enc=  one_hot_encoder_pipeline(col_list = two_categories, exclude
 # Step 2 : One Hot Encoding for Female who are diabetice during Pregnancy, as it is non comparable to Normal Diabetic condtions.  
 # Excluding Others from Race as it's not interpretable from Business Perspective.
 step_2_diabetic_enc_pregnancy = one_hot_encoder_pipeline(col_list = ['Diabetic', 'Race'],exclude_cat = excludng_categories,
-                                                         drop_orignal =True, drop_cols = ['Race'], drop_last_col= True)
+                                                         drop_orignal =True, drop_cols = ['Race'], drop_last_col= False)
 # Ordinal Mapping (for Genhealth Diabetics)
 step_3_ordinal_mapping = ordinal_label_mapping_pipeline(mapping_ = ordinal_dict, drop_orignal =True,
                                                         replace_na = True, replace_na_val = 0)
