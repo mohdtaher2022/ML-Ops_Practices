@@ -298,3 +298,70 @@ class model_scores_pipeline(Transformer):
                             prob_col = self.prob_col, 
                             model_verion = self.model_verion, 
                             model_name = self.model_name)
+
+    #  Feature Score Pipeline piece
+
+# Function to record Data Drift Scores
+def input_feature_scores(df, cat_var, cont_var, label_feature, model_version):
+    feature_category = []
+    feature_name = []
+    metrics_value = []
+    score_type = []
+    
+    # Chisquare test for Categorical Variables
+    print('------------------- Calculating Chi scores-------------------')
+    chisqaure_assembler = VectorAssembler(
+      inputCols = cat_var,
+      outputCol = 'cat_feature')
+    chisquare_vector_df1 = chisqaure_assembler.transform(df).select( "cat_feature", label_feature)
+    chi_square_result =  list((ChiSquareTest.test(chisquare_vector_df1, "cat_feature", label_feature).head().pValues ))
+    
+    feature_category.extend( ["Categorical"] * len(cat_var) )
+    score_type.extend( ["Chi-Square test - pValue"] * len(cat_var) )
+    feature_name.extend(cat_var)
+    metrics_value.extend(chi_square_result)
+    
+    # Anova Test for Continous Variable
+    print('------------------- Calculating Anova scores-------------------')
+    pvalue = []
+    for i in cont_var:
+        my_df = df.select(i,label_feature).toPandas()
+        model = ols('{0} ~ {1}'.format(i,label_feature),                 # Model formula
+                  data = my_df).fit()
+        anova_result = sm.stats.anova_lm(model, typ=2)
+        pvalue.append(anova_result['PR(>F)'][0])
+   
+    feature_category.extend( ["Continous"] * len(cont_var) )
+    score_type.extend( ["Anova test - pValue"] * len(cont_var) )
+    feature_name.extend(cont_var)
+    metrics_value.extend(pvalue)
+
+    final_df = pd.DataFrame({
+        'Model_version' : model_version,
+        'Label_category': feature_category,
+        'Feature_name': feature_name,
+        'Metric_name': score_type,
+        'Metric_value':  np.round(np.array(metrics_value) * 1.0, 3) 
+    })
+    spark_df = spark.createDataFrame(final_df).withColumn("capture_date",F.current_date())
+    spark_df =  spark_df.withColumn( "Metric_value" , F.when( F.col("Metric_value") == 'NaN', None).otherwise(F.col("Metric_value")))
+    return spark_df
+
+
+#  Performance Evaluation code itegrated within Pipeline
+class input_feature_pipeline(Transformer):
+  """Model scores function to be integrated within pipeline"""
+  def __init__(self,cat_var, cont_var, label_feature, model_version):
+        self.cat_var = cat_var # Y Label
+        self.cont_var = cont_var 
+        self.label_feature = label_feature
+        self.model_version = model_version
+  def this():
+    #define an unique ID
+    this(Identifiable.randomUID("Feature_score"))
+  def _transform(self, df):
+        return input_feature_scores(df = df , 
+                            cat_var = self.cat_var , 
+                            cont_var = self.cont_var, 
+                            label_feature = self.label_feature, 
+                            model_version = self.model_version)
