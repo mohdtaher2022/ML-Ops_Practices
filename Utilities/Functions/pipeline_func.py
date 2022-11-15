@@ -48,13 +48,13 @@ def one_hot_encoder(df,col_list, drop_cols, exclude_cat = None, drop_orignal =Tr
           execlude_cols = np.array(exclude_cat[col_])
           all_cats = np.array(df.select(col_).distinct().rdd.flatMap(lambda x: x).collect())
           type_bool = np.isin(all_cats, execlude_cols)
-          types = list(all_cats[~type_bool])
+          types = sorted(list(all_cats[~type_bool]))
           break
     
     if (exclude_cat != None) & ((~np.isin(iter_col,exclude_cols))[0]):
-      types = df.select(col_).distinct().rdd.flatMap(lambda x: x).collect()
+      types = sorted(df.select(col_).distinct().rdd.flatMap(lambda x: x).collect())
     if exclude_cat == None:
-      types = df.select(col_).distinct().rdd.flatMap(lambda x: x).collect()
+      types = sorted(df.select(col_).distinct().rdd.flatMap(lambda x: x).collect())
     types_expr = [F.when(F.col(col_) == ty, 1).otherwise(0).alias(col_+"_"+ make_alpha_num(ty.replace(" ", "_"))) for ty in types]
     if (drop_last_col) & (len(types_expr) > 1):
       types_expr = types_expr[: (len(types_expr)-1)] # Dropping Last Column as Not Being Necessary which will avoid multi collinearity.
