@@ -71,6 +71,91 @@ def Model_scores( df , prediction_col , lable_col, label_dict, prob_col, model_v
     return spark_df
 
 
+# Data Drift Monitoring Scores.
+
+# calculate the kl divergence
+def kl_divergence(p, q):
+    return np.sum(p[i] * np.log2(p[i]/q[i]) for i in np.arange(len(p)) )
+
+# calculate the js divergence
+def js_divergence(p, q):
+    m = 0.5 * (p + q)
+    return 0.5 * kl_divergence(p, m) + 0.5 * kl_divergence(q, m)
+
+
+def compare_category_js_divergence( df1, df2, features):
+  df1.registerTempTable('tmp_data_a')
+  df2.registerTempTable('tmp_data_b')
+  js_divergence_score = []
+  for  i in features:
+    g = spark.sql("""WITH
+                  A AS (Select {0} , COUNT({0}) / (SELECT COUNT(*) AS total_rows FROM tmp_data_a) AS Probability_A
+                        FROM tmp_data_a A group by 1),
+                  B AS (Select {0} , COUNT({0}) / (SELECT COUNT(*) AS total_rows FROM tmp_data_b) AS Probability_B
+                        FROM tmp_data_b A group by 1),
+                  C AS (SELECT DISTINCT {0} FROM tmp_data_a 
+                            UNION 
+                      SELECT DISTINCT {0} FROM tmp_data_b )
+                 SELECT C.* , Probability_A,  Probability_B FROM C
+                 LEFT JOIN A ON A.{0} = C.{0}
+                 LEFT JOIN B ON B.{0} = C.{0}                  
+                 """.format(i)) 
+    p = g.toPandas()['Probability_A'].values
+    q = g.toPandas()['Probability_B'].values
+    jsdiv_pq = js_divergence(p, q)
+    js_divergence_score.append(jsdiv_pq)
+    
+  return features, js_divergence_score
+
+
+def ks_test( df1, df2, cont_feat):
+    KS_scores = []
+    
+    for i in cont_feat:
+        validation_range = df1.select(i).rdd.flatMap(lambda x: x).collect() 
+        monitor_range = df2.select(i).rdd.flatMap(lambda x: x).collect() 
+        ks_score = stats.kstest(validation_range, monitor_range)
+        KS_scores.append(ks_score[1])
+    return cont_feat, KS_scores
+
+def data_drift(df1,df2, cat_feature, cont_feature, dep_var, model_version): 
+    
+    drift_scores = []
+    var_names = []
+    Label_category = []
+    score_cal = []
+    
+#     Target drift will be checked along within data drift mechanism
+    cat_feature = cat_feature + [dep_var]
+    cat_f, js_score_ = compare_category_js_divergence( df1 = df1, df2 = df2, features = cat_feature)
+    
+#     Appending Categorical scores and Var Details.
+    drift_scores.extend(js_score_)
+    var_names.extend(cat_f)
+    Label_category.extend(["Categorical"] * len(cat_f))
+    score_cal.extend(["JS_Divergence"] * len(cat_f))
+    
+#     KS_Test 
+    cont_f, ks_score_ = ks_test( df1 = df1 , df2 = df2, cont_feat = cont_feature)
+
+#     Appending Categorical scores and Var Details.
+    drift_scores.extend(ks_score_)
+    var_names.extend(cont_f)
+    Label_category.extend(["Continous"] * len(cont_f))
+    score_cal.extend(["KS_Divergence - Pvalue"] * len(cont_f))
+    
+#     DF
+    final_df = pd.DataFrame({
+        'Model_version' : model_version,
+        'Label_category': Label_category,
+        'Feature_name': var_names,
+        'Metric_name': score_cal,
+        'Metric_value':  np.round(np.array(drift_scores) * 1.0, 3) 
+    })
+    spark_df = spark.createDataFrame(final_df).withColumn("capture_date", F.current_date())
+    return spark_df
+
+
 # Extract probabolity from pyspark probability column
 def extract_prob(v):
     try:
